@@ -110,3 +110,55 @@ pce %>% filter(date > "2017-12-01", LineDescription == "PCE excluding food and e
   scale_x_date(date_labels = "%b %y", breaks = MI_dates)
 
 ggsave("graphics/g1_core.png", dpi="retina", width = 12, height=6.75, units = "in")
+
+
+#####
+###### BETTER THREE SIX #### THIS IS REPLACE CODE ######
+core <- pce %>% filter(LineDescription == "PCE excluding food and energy") %>%
+  select(date, DataValue) %>%
+  mutate(ThreeMonth = (DataValue/lag(DataValue,3))^4-1) %>%
+  mutate(SixMonth = (DataValue/lag(DataValue,6))^2-1) %>%
+  mutate(YoY = (DataValue/lag(DataValue,12))-1) %>%
+  select(-DataValue, YoY) %>%
+  pivot_longer(ThreeMonth:SixMonth, names_to = "time_length", values_to = "change") %>%
+  mutate(time_length = str_replace_all(time_length,"SixMonth", "6-Month Change")) %>%
+  mutate(time_length = str_replace_all(time_length,"ThreeMonth", "3-Month Change")) %>%
+  mutate(last_value = ifelse(date==max(date),change,NA))
+
+extra_value <- core %>% group_by(time_length) %>% filter(year(date)==2022) %>% filter(change == max(change)) %>%
+  ungroup() %>% select(date, time_length, extra_value = change)
+
+MI_dates <- pce %>% filter(date > "2010-12-01")
+MI_dates <- unique(MI_dates$date)
+MI_dates <- sort(MI_dates, decreasing = TRUE)
+MI_dates = MI_dates[seq(1, length(MI_dates), 12)]
+
+date_start = "2017-01-01"
+date_end = "2019-01-01"
+date_period <- interval(date_start, date_end)
+date_period = date_period %/% months(1)
+
+pre_core <- pce %>% filter(LineDescription == "PCE excluding food and energy", date == date_start | date == date_end) %>%
+  mutate(change = DataValue/lag(DataValue,1)) %>% filter(!is.na(change)) %>% mutate(change = change^(12/date_period) - 1) %>% select(change)
+pre_core <- as.numeric(pre_core)
+
+core %>% filter(date > "2014-12-01") %>%
+  left_join(extra_value, by=c("date","time_length")) %>%
+  mutate(last_value = ifelse(!is.na(extra_value),extra_value,last_value)) %>%
+  ggplot(aes(date, change, color=time_length, label=label_percent()(last_value))) + geom_line(size=1.2) +
+  labs(x="", y="",
+       title="Prices Are Moving Sideways in Recent Months",
+       subtitle = paste("Core PCE inflation, monthly percentage change, annualized. Dotted line represented 2014 to 2019 value of ", round(pre_core,3)*100, "%, annualized.", sep=""),
+       caption = "PC excluding food and energy, monthly percent change, BLS, Author's calculations. Mike Konczal, Roosevelt Institute.") +
+  theme_lass +
+  geom_hline(yintercept = pre_core, linetype="dashed", color="#A4CCCC") +
+  scale_fill_brewer(palette="Paired") +
+  theme(panel.grid.major.y = element_line(size=0.5)) +
+  theme(plot.title.position = "plot") +
+  scale_y_continuous(labels = percent) +
+  scale_x_date(date_labels = "%b\n%Y", breaks=MI_dates) +
+  theme(legend.position = c(0.90,0.15), legend.text = element_text(size=15)) +
+  scale_color_manual(values=c("#2D779C", "#A4CCCC")) +
+  geom_text(show.legend=FALSE, nudge_x = 88)
+
+ggsave("graphics/three_six_core_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")

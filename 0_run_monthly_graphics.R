@@ -15,10 +15,11 @@ source("1a_helper_functions.R")
 source("1b_load_PCE_items.R")
 
 
-title_three_dashboard <- "Achieving 3 Key Goals: Goods Deflation, Housing Peaked, Services Slowing"
+title_three_dashboard <- "PCE Stumble: Goods Inflating, Services Not Slowing"
 three_twelve_graphic <- "Inflation Over the Past Three Months Have Finally Dropped"
-title_overview <- "Inflation Continues to Fall"
+title_overview <- "Inflation Is Moving Sideways"
 source("2_three_dashboard_graphics.R")
 
 
 source("3_difference_with_cpi.R")
+source("6_supercore.R")

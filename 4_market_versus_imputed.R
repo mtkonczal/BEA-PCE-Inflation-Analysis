@@ -66,12 +66,11 @@ otm_basket_services <- c('DFARRG',
                          'DFORRG')
 
 
-pce %>% filter()
 
 market_services <- pce %>% filter(LineDescription %in% mb_pce_fields) %>%
   filter(date >= "2018-01-01") %>%
   select(date, item_name = LineDescription, WDataValue_P1) %>%
-  pivot_wider(names_from=LineDescription, values_from = WDataValue_P1) %>%
+  pivot_wider(names_from=item_name, values_from = WDataValue_P1) %>%
   clean_names() %>%
   mutate(market_based_services_minus_shelter = market_based_pce_services - market_based_pce_housing_services) %>%
   pivot_longer(-date, names_to = "item_name", values_to = "WDataValue_P1") %>%
@@ -95,7 +94,7 @@ pce %>% filter(SeriesCode %in% otm_basket_services) %>%
   rbind(market_services) %>%
   ggplot(aes(date, WDataValue_P1a, fill=item_name)) + geom_bar(stat="identity", size=0) + theme_lass + facet_wrap(~item_name) +
   scale_y_continuous(labels = percent) +
-  labs(title="Slowdown is in Market-Based Prices, Not Driven by Imputed Prices",
+  labs(title="Changes is in Market-Based Prices, Not Driven by Imputed Prices",
        subtitle = "Contribution to PCE inflation, annualized",
        caption = "NIPA Tables 2.4.4U and 2.4.5U, PCE weights are nominal consumption shares as a percent of total spending,\nOther-than-market components calculated from BEA's 'What is the 'market-based' PCE price index?' list, Mike Konczal, Roosevelt Institute", x="") +
   scale_fill_brewer(palette="Paired", name = "item_name") + theme(legend.position = "none")
@@ -156,7 +155,8 @@ pce %>% filter(LineDescription %in% g_s_index) %>% arrange(date) %>%
   mutate(LineDescription = str_replace_all(LineDescription,"Furnishings and durable household equipment","Furnishings/Household Equiment")) %>%
   mutate(TimePeriod_a = ifelse(month(date)==11,TimePeriod,NA)) %>%
   ggplot(aes(Quantity, DataValue, label=TimePeriod_a)) + geom_point() + theme_lass + geom_path(color="skyblue") +
-  geom_label() + facet_grid(~LineDescription, scales = "free") +
+  #geom_label() +
+  facet_wrap(~LineDescription, scales = "free") +
   labs(title="Goods Face a Convex Supply Curve While Services Show Downward Nominal Rigidity", subtitle="Nominal growth for goods and services categories, split into their price and quantity indexes, national accounts, quarterly",
        x="Quantity (Index, 2012=100)", y="Price (Index, 2012=100)",
        caption="Table 2.4.3, 2.4.4, NIPA, BEA. Mike Konczal, Roosevelt Institute") +
