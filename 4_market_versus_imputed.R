@@ -151,11 +151,11 @@ a <-
 g_s_index <- c("Goods","Services")
 
 pce %>% filter(LineDescription %in% g_s_index) %>% arrange(date) %>%
-  mutate(TimePeriod = str_replace_all(TimePeriod,"Q","\nQ")) %>%
+  mutate(TimePeriod = str_replace_all(TimePeriod,"M","\nM")) %>%
   mutate(LineDescription = str_replace_all(LineDescription,"Furnishings and durable household equipment","Furnishings/Household Equiment")) %>%
-  mutate(TimePeriod_a = ifelse(month(date)==11,TimePeriod,NA)) %>%
+  mutate(TimePeriod_a = ifelse(month(date)==month(max(date)),TimePeriod,NA)) %>%
   ggplot(aes(Quantity, DataValue, label=TimePeriod_a)) + geom_point() + theme_lass + geom_path(color="skyblue") +
-  #geom_label() +
+  geom_text_repel(color="skyblue", size=2.5,  box.padding = 1, min.segment.length = Inf) +
   facet_wrap(~LineDescription, scales = "free") +
   labs(title="Goods Face a Convex Supply Curve While Services Show Downward Nominal Rigidity", subtitle="Nominal growth for goods and services categories, split into their price and quantity indexes, national accounts, quarterly",
        x="Quantity (Index, 2012=100)", y="Price (Index, 2012=100)",
