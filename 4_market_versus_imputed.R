@@ -94,7 +94,7 @@ pce %>% filter(SeriesCode %in% otm_basket_services) %>%
   rbind(market_services) %>%
   ggplot(aes(date, WDataValue_P1a, fill=item_name)) + geom_bar(stat="identity", size=0) + theme_lass + facet_wrap(~item_name) +
   scale_y_continuous(labels = percent) +
-  labs(title="Changes is in Market-Based Prices, Not Driven by Imputed Prices",
+  labs(title="Changes in Market-Based Services Inflation Versus Imputed",
        subtitle = "Contribution to PCE inflation, annualized",
        caption = "NIPA Tables 2.4.4U and 2.4.5U, PCE weights are nominal consumption shares as a percent of total spending,\nOther-than-market components calculated from BEA's 'What is the 'market-based' PCE price index?' list, Mike Konczal, Roosevelt Institute", x="") +
   scale_fill_brewer(palette="Paired", name = "item_name") + theme(legend.position = "none")

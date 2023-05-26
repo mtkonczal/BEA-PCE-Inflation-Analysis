@@ -4,8 +4,8 @@ library(lubridate)
 library(scales)
 
 setwd("/Users/mkonczal/Documents/GitHub/BEA-PCE-Inflation-Analysis/")
-beaKey <- read_csv("/Users/mkonczal/Documents/data_folder/BEA_key/BEA_key.csv")
-beaKey <- as.character(beaKey)
+#beaKey <- read_csv("/Users/mkonczal/Documents/data_folder/BEA_key/BEA_key.csv")
+#beaKey <- as.character(beaKey)
 beaKey <- "F5927FF7-CA99-4687-87EE-34135A3B9071"
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
