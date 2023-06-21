@@ -6,7 +6,8 @@ title_supercore <- "This is a test run of supercore inflation, but for PCE"}
 core_supercore <- c("PCE excluding food and energy","Used autos","Housing")
 
 
-
+date_breaks <- sort(unique(pce$date), decreasing = TRUE)
+date_breaks <- date_breaks[seq(1, length(date_breaks), 12)]
 
 core_analysis <- pce %>% filter(LineDescription %in% core_supercore) %>%
   select(date, LineDescription, WDataValue_P1) %>%
@@ -28,7 +29,7 @@ core_analysis %>% mutate(WDataValue_P1a = (supercore+1)^12-1, Three_month_change
   theme_lass +
   scale_fill_brewer(palette="RdPu") +
   scale_y_continuous(labels = percent) +
-  scale_x_date(date_labels = "%Y") +
+  scale_x_date(date_labels = "%b\n%Y", breaks = date_breaks) +
   theme(axis.text.x = element_text(size=14), axis.text.y = element_text(size=19)) +
   theme(plot.title = element_text(size = 22, face="bold"))
 

@@ -49,7 +49,10 @@ pce %>% filter(LineDescription %in% cyclical_categories, date == "2023-02-01") %
 pce %>% filter(LineDescription %in% cyclical_categories) %>% group_by(date) %>%
   summarize(demand_inflation = sum(WDataValue_P1)) %>% ungroup() %>%
   mutate(demand_inflation = (demand_inflation+1)^12-1) %>%
-  ggplot(aes(date, demand_inflation)) + geom_col(size=0) + theme_classic()
+  ggplot(aes(date, demand_inflation)) + geom_col(size=0) + theme_classic() +
+  scale_y_continuous(labels = percent) +
+  scale_x_date(date_labels = "%b\n%Y", breaks = date_breaks) +
+  labs(subtitle="cyclical inflation (Mahedy/Shapiro), attempted replication by Mike Konczal")
 
 # no housing
 

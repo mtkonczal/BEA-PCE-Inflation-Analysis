@@ -533,3 +533,29 @@ rm(PCE_Weight, GDP_Weight, PCE_Q)
 
 #save(pce, file = "data/pce.RData")
 
+#### Long NHS ####
+
+nhs_fields <- c("Services","Electricity and gas","Housing")
+
+pce %>% filter(LineDescription %in% nhs_fields) %>%
+  select(date, LineDescription, WDataValue_P1, PCEweight) %>%
+  group_by(date) %>%
+  summarize(nhsWP1 = WDataValue_P1[LineDescription == "Services"] - WDataValue_P1[LineDescription == "Electricity and gas"] - WDataValue_P1[LineDescription == "Housing"]) %>%
+  ungroup() %>%
+  mutate(nhsWP1A = (nhsWP1+1)^12-1) %>%
+  mutate(m3avg = nhsWP1A+lag(nhsWP1A,1)+lag(nhsWP1A,2), m3avg = m3avg/3) %>%
+  ggplot(aes(date,nhsWP1A)) + geom_line() + geom_line(aes(date, m3avg), color="red")
+
+service_breakdown <- c("Housing and utilities",
+   "Health care",
+   "Transportation services",
+   "Recreation services",
+   "Food services and accommodations",
+   "Financial services and insurance",
+   "Other services")
+   
+   
+pce %>% filter(LineDescription %in% service_breakdown) %>%
+  group_by(LineDescription) %>%
+  mutate(lagged_six = DataValue/lag(DataValue,6), lagged_six = lagged_six^2-1) %>%
+  ggplot(aes(date,lagged_six)) + geom_line() + facet_wrap(~LineDescription) + theme_classic()
