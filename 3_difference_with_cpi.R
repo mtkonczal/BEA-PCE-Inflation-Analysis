@@ -4,7 +4,7 @@ if(!exists("title_three_dashboard")){
 title_three_dashboard <- "This is a test showing how the PCE inflation breaks down default"}
 
 
-source("1c_load_cpi_data.R")
+load("data/")
 
 #SET UP DATA:
 cpi <- cpi_data %>%

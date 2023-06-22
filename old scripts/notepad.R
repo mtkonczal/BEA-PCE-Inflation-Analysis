@@ -535,16 +535,78 @@ rm(PCE_Weight, GDP_Weight, PCE_Q)
 
 #### Long NHS ####
 
-nhs_fields <- c("Services","Electricity and gas","Housing")
 
-pce %>% filter(LineDescription %in% nhs_fields) %>%
+
+nhs_index <-
+pce %>%
   select(date, LineDescription, WDataValue_P1, PCEweight) %>%
   group_by(date) %>%
-  summarize(nhsWP1 = WDataValue_P1[LineDescription == "Services"] - WDataValue_P1[LineDescription == "Electricity and gas"] - WDataValue_P1[LineDescription == "Housing"]) %>%
+  summarize(nhsWP1 = WDataValue_P1[LineDescription == "PCE services excluding energy"] - WDataValue_P1[LineDescription == "Housing"],
+            nhs_weight = PCEweight[LineDescription == "PCE services excluding energy"] - PCEweight[LineDescription == "Housing"]) %>%
   ungroup() %>%
-  mutate(nhsWP1A = (nhsWP1+1)^12-1) %>%
-  mutate(m3avg = nhsWP1A+lag(nhsWP1A,1)+lag(nhsWP1A,2), m3avg = m3avg/3) %>%
-  ggplot(aes(date,nhsWP1A)) + geom_line() + geom_line(aes(date, m3avg), color="red")
+  mutate(nhsWP1A = nhsWP1/nhs_weight) %>%
+  mutate(nhsWP1A = (nhsWP1A+1)^12-1) %>%
+  mutate(index = nhsWP1/nhs_weight+1) %>% filter(!is.na(index)) %>%
+  mutate(index = cumprod(index))
+
+nhs_index %>%
+  mutate(six_change = (index/lag(index,3))^4-1) %>%
+  ggplot(aes(date,six_change)) + geom_line() + theme_classic()
+
+
+tail(nhs_index %>%
+  mutate(three_change = (index/lag(index,3))^4-1) %>%
+  select(date, nhsWP1A, three_change))
+
+nhs %>%
+  ggplot(aes(date,nhsWP1A)) + geom_line()
+
+
+nhs <-
+  pce %>%
+  select(date, LineDescription, WDataValue_P1, PCEweight) %>%
+  group_by(date) %>%
+  summarize(nhsWP1 = WDataValue_P1[LineDescription == "Calculators, typewriters, and other information processing equipment"] + WDataValue_P1[LineDescription == "Watches"] +
+              WDataValue_P1[LineDescription == "Spirits"] + WDataValue_P1[LineDescription == "Other fuels"] +WDataValue_P1[LineDescription == "Watches"] +
+              WDataValue_P1[LineDescription == "Standard clothing issued to military personnel"],
+            nhs_weight = PCEweight[LineDescription == "Calculators, typewriters, and other information processing equipment"] + PCEweight[LineDescription == "Watches"] +
+              PCEweight[LineDescription == "Spirits"] + PCEweight[LineDescription == "Watches"] + PCEweight[LineDescription == "Other fuels"] +
+              PCEweight[LineDescription == "Standard clothing issued to military personnel"]) %>%
+  ungroup() %>%
+  mutate(nhsWP1A = nhsWP1/nhs_weight) %>%
+  mutate(nhsWP1A = (nhsWP1A+1)^12-1) %>%
+  mutate(index = nhsWP1/nhs_weight+1) %>% filter(!is.na(index)) %>%
+  mutate(index = cumprod(index), index = index/index[date=="2012-07-01"]*100.053)
+
+
+core_goods_fields <- c("Goods","Gasoline and other energy goods","Food and beverages purchased for off-premises consumption","Services","Electricity and gas")
+
+core_goods_index <-
+  pce %>%
+  filter(year(date) > 2009) %>%
+  select(date, LineDescription, WDataValue_P1, PCEweight) %>%
+  group_by(date) %>%
+  summarize(nhsWP1 = WDataValue_P1[LineDescription == "Personal consumption expenditures"] - WDataValue_P1[LineDescription == "Gasoline and other energy goods"] -
+              WDataValue_P1[LineDescription == "Food and beverages purchased for off-premises consumption"] -
+              WDataValue_P1[LineDescription == "Electricity and gas"],
+            nhs_weight = PCEweight[LineDescription == "Personal consumption expenditures"] + PCEweight[LineDescription == "Watches"] +
+              PCEweight[LineDescription == "Spirits"] - PCEweight[LineDescription == "Gasoline and other energy goods"] -
+              PCEweight[LineDescription == "Food and beverages purchased for off-premises consumption"] -
+              PCEweight[LineDescription == "Electricity and gas"]) %>%
+  ungroup() %>%
+  mutate(nhsWP1A = nhsWP1/nhs_weight) %>%
+  mutate(nhsWP1A = (nhsWP1A+1)^12-1) %>%
+  mutate(index = nhsWP1/nhs_weight+1) %>% filter(!is.na(index)) %>%
+  mutate(index = cumprod(index), index = index/index[date=="2012-07-01"]*100.053)
+
+write_csv(core_goods_index, "core_index.csv")
+
+
+nhs %>%
+  ggplot(aes(date,index)) + geom_line() + theme_classic() +
+  labs(y="Index 2010=100", subtitle="Custom Index for 'Calculators, typewriters, and other information processing equipment', 'Other Fuels', 'Watches,'\n'Standard clothing issued to military personnel', and 'Spirits.'",
+       caption ="Mike Konczal")
+ggsave("graphics/openheimer_index.png", dpi="retina", width = 12, height=6.75, units = "in")
 
 service_breakdown <- c("Housing and utilities",
    "Health care",
@@ -559,3 +621,8 @@ pce %>% filter(LineDescription %in% service_breakdown) %>%
   group_by(LineDescription) %>%
   mutate(lagged_six = DataValue/lag(DataValue,6), lagged_six = lagged_six^2-1) %>%
   ggplot(aes(date,lagged_six)) + geom_line() + facet_wrap(~LineDescription) + theme_classic()
+
+
+op <- c("Calculators, typewriters, and other information processing equipment", "Watches", "Spirits", "Other fuels", "Watches","Standard clothing issued to military personnel")
+
+pce %>% filter(LineDescription %in% op) %>% group_by(LineDescription) %>% summarize(n())

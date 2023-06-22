@@ -1,3 +1,4 @@
+library(janitor)
 library(bea.R)
 library(tidyverse)
 library(lubridate)
@@ -6,8 +7,7 @@ library(scales)
 setwd("/Users/mkonczal/Documents/GitHub/BEA-PCE-Inflation-Analysis/")
 beaKey <- read_csv("/Users/mkonczal/Documents/data_folder/BEA_key/BEA_key.csv")
 beaKey <- as.character(beaKey)
-#beaKey <- "F5927FF7-CA99-4687-87EE-34135A3B9071"
-source("0_helper_functions.R")
+source("1a_helper_functions.R")
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
@@ -48,6 +48,7 @@ rm(PCE_Weight, GDP_Weight, PCE_Q)
 #save(pce, file = "data/pce.RData")
 
 ###############
+load("data/pce_long.RData")
 
 sanity_check <- c("Goods","Services","PCE energy goods and services")
 
@@ -74,11 +75,58 @@ BEA_core <- pce %>% filter(LineDescription %in% BEA_core_indexes) %>%
   select(date, item_name = LineDescription, WDataValue_P1)
 
 export <- rbind(BEA_core,core_analysis) %>%
-  mutate(WDataValue_P1 = (1+WDataValue_P1)^12-1) %>%
+  #mutate(WDataValue_P1 = (1+WDataValue_P1)^12-1) %>%
   pivot_wider(names_from=item_name, values_from = WDataValue_P1) %>%
   clean_names()
 
 write_csv(export, "exported_check.csv")
+
+
+
+##### CHECK ON AGGREGATING BACK UP ####
+
+# CORE GOODS TEST
+core_goods_fields <- c("Goods","Gasoline and other energy goods","Food and beverages purchased for off-premises consumption","Services","Electricity and gas")
+
+core_analysis <- pce %>% filter(LineDescription %in% core_goods_fields) %>%
+  filter(date >= "2018-01-01") %>%
+  select(date, LineDescription, WDataValue_P1) %>%
+  pivot_wider(names_from=LineDescription, values_from = WDataValue_P1) %>%
+  clean_names() %>%
+  mutate(core_goods = goods - food_and_beverages_purchased_for_off_premises_consumption - gasoline_and_other_energy_goods) %>%
+  mutate(core_services = services - electricity_and_gas) %>%
+  mutate(core_inflation = core_goods + core_services) %>%
+  pivot_longer(-date, names_to = "item_name", values_to = "WDataValue_P1") %>%
+  filter(item_name %in% c("core_goods","core_services","core_inflation"))
+
+core_weights <- pce %>% filter(LineDescription %in% core_goods_fields) %>%
+  filter(date >= "2021-01-01") %>%
+  select(date, LineDescription, PCEweight) %>%
+  pivot_wider(names_from=LineDescription, values_from = PCEweight) %>%
+  clean_names() %>%
+  mutate(core_goods = goods - food_and_beverages_purchased_for_off_premises_consumption - gasoline_and_other_energy_goods) %>%
+  mutate(core_services = services - electricity_and_gas) %>%
+  mutate(core_inflation = core_goods + core_services) %>%
+  pivot_longer(-date, names_to = "item_name", values_to = "PCEweight") %>%
+  filter(item_name %in% c("core_goods","core_services","core_inflation")) %>%
+  left_join(core_analysis, by=c("date","item_name")) %>%
+  mutate(DataValue_P1 = WDataValue_P1/PCEweight) %>%
+  select(date, item_name, DataValue_P1)
+
+
+BEA_core_indexes <- c("PCE goods excluding food and energy","PCE services excluding energy","PCE excluding food and energy")
+
+BEA_core <- pce %>% filter(LineDescription %in% BEA_core_indexes) %>%
+  filter(date >= "2021-01-01") %>%
+  select(date, item_name = LineDescription, DataValue_P1)
+
+export <- rbind(BEA_core,core_weights) %>%
+  mutate(DataValue_P1 = (1+DataValue_P1)^12-1) %>%
+  pivot_wider(names_from=item_name, values_from = DataValue_P1) %>%
+  clean_names()
+
+write_csv(export, "exported_check.csv")
+
 
 core_analysis %>% mutate(WDataValue_P1a = (WDataValue_P1+1)^12-1) %>%
   ggplot(aes(date,WDataValue_P1a)) + geom_bar(stat="identity") + facet_wrap(~item_name) + theme_classic()
