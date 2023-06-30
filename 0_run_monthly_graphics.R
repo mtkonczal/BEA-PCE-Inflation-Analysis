@@ -12,7 +12,7 @@ source("1a_helper_functions.R")
 source("1b_load_PCE_items.R")
 
 
-title_three_dashboard <- "Declines in Housing Offset by Goods, Other Services"
+title_three_dashboard <- "Declines in Housing and Services Offset by Goods"
 three_twelve_graphic <- "Inflation Over the Past Three Months Have Finally Dropped"
 title_overview <- "Inflation Is Moving Sideways"
 source("2_three_dashboard_graphics.R")

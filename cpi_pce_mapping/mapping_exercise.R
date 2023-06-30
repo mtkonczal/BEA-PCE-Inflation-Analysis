@@ -3,8 +3,8 @@ library(janitor)
 library(lubridate)
 library(scales)
 
-load("data/last_cpi_data.RData")
-load("data/pce_long.RData")
+load("cpi_pce_mapping/data/last_cpi_data.RData")
+#load("data/pce_long.RData")
 mapping <- read_csv("data/cpi_pce_item_mapping.csv") %>% clean_names()
 
 pce %>% filter(LineDescription == "Food services")
@@ -65,6 +65,20 @@ nhs_index <-
   mutate(index = nhsWP1/nhs_weight+1) %>% filter(!is.na(index)) %>%
   mutate(index = cumprod(index))
 #####
+
+
+#### Two together
+temp <- nhs_index %>% select(date, index) %>% mutate(type = "pce")
+
+cpi_nhs_index %>% select(date, index) %>% mutate(type = "cpi") %>%
+  rbind(temp) %>%
+  group_by(type) %>%
+  mutate(month3 = (index/lag(index,3))^4-1) %>%
+  ungroup() %>%
+  filter(year(date)> 2016) %>%
+  ggplot(aes(date,month3,color=type)) + geom_line()
+
+
 
 
 #### Attempt One ####

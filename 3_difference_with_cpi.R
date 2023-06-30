@@ -21,7 +21,12 @@ nhs_index <-
   mutate(index = cumprod(index))
 #####
 
+
+
 ##### Graphic for Non-Housing Services ####
+date_breaks <- sort(unique(pce$date), decreasing = TRUE)
+date_breaks <- date_breaks[seq(1, length(date_breaks), 12)]
+
 nhs_index_1_month <- nhs_index %>%
   mutate(month1 = (index/lag(index,1))^12-1) %>%
   select(date, month1) %>% mutate(type="month3") %>%
@@ -35,21 +40,23 @@ nhs_index %>%
   pivot_longer(month3:month6, names_to = "type", values_to = "value") %>%
   left_join(nhs_index_1_month, by=c("date","type")) %>%
   mutate(last_value = ifelse(date == max(date), value, as.numeric(NA))) %>%
+  mutate(type = str_replace_all(type,"month3","3-month average")) %>%
+  mutate(type = str_replace_all(type,"month6","6-month average")) %>%
   ggplot(aes(date, value, color=type, label=label_percent()(last_value))) + geom_line(size=1.2) +
   labs(x="", y="",
-       title="I am a graphicTKKTKTKT of Non-Housing Services",
-       subtitle = "Tester",
-       caption = "April 2020 excluded on the 1-month. TKTKTKTAll items less food and energy, monthly percent change, BLS, Author's calculations. Mike Konczal, Roosevelt Institute.") +
+       title="PCE Non-Housing Services Has a Lower Month",
+       subtitle = "",
+       caption = "April 2020 excluded on the 1-month. NIPA Tables 2.4.4U and 2.4.5U, weights approximated as nominal consumption shares as a percent of the total. Author's calculations. Mike Konczal, Roosevelt Institute.") +
   theme_lass +
 #  geom_hline(yintercept = pre_core, linetype="dashed", color="#A4CCCC") +
   scale_fill_brewer(palette="Paired") +
   theme(panel.grid.major.y = element_line(size=0.5)) +
   theme(plot.title.position = "plot") +
   scale_y_continuous(labels = percent) +
-  scale_x_date(date_labels = "%b\n%Y") +
-  theme(legend.position = c(0.90,0.15), legend.text = element_text(size=15)) +
+  scale_x_date(date_labels = "%b\n%Y", breaks = date_breaks) +
+  theme(legend.position = c(0.25,0.85), legend.text = element_text(size=15)) +
   scale_color_manual(values=c("#2D779C", "#A4CCCC")) +
-  geom_text(show.legend=FALSE, nudge_x = 120) +
+  geom_text(show.legend=FALSE, nudge_x = 80) +
   geom_col(aes(date, month1), alpha=0.1, size=0, show.legend = FALSE)
 
 ggsave("graphics/pce_nhs_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
@@ -86,11 +93,13 @@ supercore_index %>%
   pivot_longer(month3:month6, names_to = "type", values_to = "value") %>%
   left_join(supercore_index_1_month, by=c("date","type")) %>%
   mutate(last_value = ifelse(date == max(date), value, as.numeric(NA))) %>%
+  mutate(type = str_replace_all(type,"month3","3-month average")) %>%
+  mutate(type = str_replace_all(type,"month6","6-month average")) %>%
   ggplot(aes(date, value, color=type, label=label_percent()(last_value))) + geom_line(size=1.2) +
   labs(x="", y="",
-       title="I am a graphicTKKTKTKT of Supercore",
-       subtitle = "Tester",
-       caption = "April 2020 excluded on the 1-month. TKTKTKTAll items less food and energy, monthly percent change, BLS, Author's calculations. Mike Konczal, Roosevelt Institute.") +
+       title="Supercore: Core Inflation Excluding Used Cars and Housing",
+       subtitle = "",
+       caption = "April 2020 excluded on the 1-month. NIPA Tables 2.4.4U and 2.4.5U./nweights approximated as nominal consumption shares as a percent of the total. Author's calculations. Mike Konczal, Roosevelt Institute.") +
   theme_lass +
   #  geom_hline(yintercept = pre_core, linetype="dashed", color="#A4CCCC") +
   scale_fill_brewer(palette="Paired") +
@@ -98,12 +107,12 @@ supercore_index %>%
   theme(plot.title.position = "plot") +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y") +
-  theme(legend.position = c(0.90,0.15), legend.text = element_text(size=15)) +
-  scale_color_manual(values=c("red", "purple")) +
-  geom_text(show.legend=FALSE, nudge_x = 120) +
-  geom_col(aes(date, month1), alpha=0.1, size=0, show.legend = FALSE)
+  theme(legend.position = c(0.15,0.85), legend.text = element_text(size=15)) +
+  scale_color_manual(values=c("#FFD3B5", "#F67280")) +
+  geom_text(show.legend=FALSE, nudge_x = 90) +
+  geom_col(aes(date, month1), alpha=0.1, size=0, show.legend = FALSE, fill="#FFD3B5")
 
-ggsave("graphics/pce_nhs_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
+ggsave("graphics/supercore_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
 
 
 #### Set up CPI ####
@@ -182,14 +191,10 @@ nhs_index_1 <-
   pivot_longer(cols =c("nhsWP1","nhs_excluding_finservices","nhs_ex_fin_hos","nhs_ex_fin_hos_food"), names_to = "type", values_to = "value") %>%
   mutate(value = (value+1)^12-1) %>%
   filter(date > "2022-05-01") %>%
-  ggplot(aes(date,value,color=type)) + geom_line() + theme_classic() + theme(legend.position = "bottom") +
+  ggplot(aes(date,value,color=type)) + geom_line() + theme_classic() + theme(legend.position = c(0.7,0.3)) +
   geom_line(data=cpi_nhs_index[cpi_nhs_index$date > "2022-05-01",], aes(date, nhsWP1A), color="blue",
-            linetype="dotted", linesize=1.2)
-
-
-mutate(nhsWP1A = (nhsWP1A+1)^12-1) %>%
-  mutate(index = nhsWP1/nhs_weight+1) %>% filter(!is.na(index)) %>%
-  mutate(index = cumprod(index))
+            linetype="dotted", linesize=1.2) +
+  labs(subtitle="Dotted line is CPI Non-Housing Services. Solid Lines are PCE NHS, with Several Difference Between Them Highlighted")
 
 
 ggsave("graphics/nhs_difference_pce_cpi.png", dpi="retina", width = 12, height=6.75, units = "in")
@@ -200,7 +205,7 @@ ggsave("graphics/nhs_difference_pce_cpi.png", dpi="retina", width = 12, height=6
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
-cpi_diff <- get_NIPA_data(beaKey, 'U90100', 'Q', '2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023', data_set_name = 'NIUnderlyingDetail')
+cpi_diff <- get_NIPA_data(beaKey, 'U90100', 'M', '2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023', data_set_name = 'NIUnderlyingDetail')
 cpi_diff <- BEA_date_quarterly(cpi_diff)
 #cpi_diff <- BEA_date_monthly(cpi_diff)
 
@@ -212,9 +217,22 @@ diff_types <- c("Less: Weight effect (percentage points)",
           "Less: Other effects (percentage points)"
           )
 
-cpi_diff %>% filter(LineDescription %in% diff_types) %>%
-  ggplot(aes(date,DataValue, color=LineDescription)) + geom_line(size=1.2) +
-  theme_classic() + theme(legend.position = "bottom") + facet_wrap(~LineDescription, scales = "free")
+
+### TKTK
+cpi_diff %>% filter(LineDescription == "Rent of shelter") %>%
+  mutate(DataValue = (DataValue+1)^12-1) %>%
+  ggplot(aes(date,DataValue)) + geom_line(size=1.2) +
+  theme_classic() + labs(subtitle="This is how much you would subtract from PCE to bring it in line with CPI for housing.",
+                         caption="BEA, Table 9.1U. Reconciliation of Percent Change in the CPI with Percent Change in the PCE Price Index, Mike Konczal, Roosevelt Institute") + theme_lass
+
+
+
+ggsave("graphics/housing_cpi_pce.png", dpi="retina", width = 12, height=6.75, units = "in")
+
+
+
+
+
 
 cpi_diff
 
