@@ -30,8 +30,8 @@ remove_outliers <- function(x, multiplier = 1.5) {
 
 lowest <- read_csv("data/pce_items_lowest.csv")
 
-months_change <- 12
-compare_date <- max(pce$date) %m-% months(12)
+months_change <- 3
+compare_date <- max(pce$date) %m-% months(5)
 
 recent <-pce %>% group_by(LineDescription) %>% filter(LineDescription != 323 | LineDescription != 324) %>%
   mutate(QuantityFinal = Quantity/lag(Quantity,months_change)-1,
@@ -45,6 +45,7 @@ recent <-pce %>% group_by(LineDescription) %>% filter(LineDescription != 323 | L
 
 recent %>% inner_join(lowest,by="LineDescription") %>% filter(category != "Aggregate") %>%
   mutate(category = if_else(category %in% c("Energy","Food"), "Food and Energy",category)) %>%
+  filter(category != "Food and Energy") %>%
   arrange(LineDescription) %>%
   mutate(x = LineDescription == lag(LineDescription)) %>%
   filter(!x) %>%
@@ -53,7 +54,7 @@ recent %>% inner_join(lowest,by="LineDescription") %>% filter(category != "Aggre
   mutate(PriceFinal = remove_outliers(PriceFinal, 3)) %>%
   ggplot(aes(QuantityFinal,PriceFinal,size=weight, color=category)) + geom_point(aes(fill="skyblue"), alpha=0.5, shape = 21, color = "black", stroke = 1.5, show.legend=FALSE) +
   theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-  labs(subtitle = "12-month Change June 2023 Minus 12-month Change June 2023, Quantity and Inflation, for 130 PCE Item Categories",
+  labs(subtitle = "3-month Change June 2023 Minus 3-month Change Jan 2023, Quantity and Inflation, for 130 PCE Item Categories",
        caption = "Outliers 3x IQR range removed. Based on Adam Shapiro's work, San Francisco Fed. Mike Konczal, Roosevelt Institute",
        y = "Percentage Point Change in Price (Inflation)",
        x = "Percentage Point Change in Quantity (Real Value)") +
