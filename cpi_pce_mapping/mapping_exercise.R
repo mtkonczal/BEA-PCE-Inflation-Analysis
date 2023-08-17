@@ -4,6 +4,8 @@ library(lubridate)
 library(scales)
 
 load("cpi_pce_mapping/data/last_cpi_data.RData")
+
+load("data/pce_long.RData")
 #load("data/pce_long.RData")
 mapping <- read_csv("data/cpi_pce_item_mapping.csv") %>% clean_names()
 
@@ -236,3 +238,24 @@ tail(cpi %>% filter(item_name == "Food away from home") %>% select(date, item_na
 
 #### This ####
 
+
+pce %>% filter(LineDescription %in% c("Net purchases of used motor vehicles (56)","Food and beverages purchased for off-premises consumption",
+                                      "PCE services excluding energy")) %>%
+  mutate(DataValue_P1a = (DataValue_P1+1)^12-1) %>%
+  filter(year(date) > 1981) %>%
+  ggplot(aes(date,DataValue_P1a, color=LineDescription)) + geom_line() + theme_classic() +
+  theme(legend.position = "bottom")
+
+a <- 
+  pce %>% filter(year(date) > 1984, year(date) < 2020) %>%
+  group_by(LineDescription) %>%
+  summarize(vol = sd(DataValue_P1), Wvol = sd(WDataValue_P1),
+            w = mean(PCEweight)) %>%
+  arrange(desc(Wvol)) %>%
+  ungroup() %>%
+  mutate(rank = 1, rank = cumsum(rank)) %>%
+  filter(LineDescription %in% c("Net purchases of used motor vehicles (56)","Food and beverages purchased for off-premises consumption",
+                                "PCE services excluding energy")) 
+  
+
+  unique(pce[grepl("sed aut", pce$LineDescription),]$LineDescription)

@@ -1,12 +1,14 @@
+library(quantmod)
 library(bea.R)
 library(tidyverse)
 library(lubridate)
 library(scales)
+library(hrbrthemes)
 
 setwd("/Users/mkonczal/Documents/GitHub/BEA-PCE-Inflation-Analysis/")
 beaKey <- read_csv("/Users/mkonczal/Documents/data_folder/BEA_key/BEA_key.csv")
 beaKey <- as.character(beaKey)
-source("0_helper_functions.R")
+source("1a_helper_functions.R")
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
@@ -485,6 +487,39 @@ plot(diff$YoY, wages_pricesM$YoY)
 
 a <- lm(wages_pricesM$YoY ~ diff$YoY)
 summary(a)
+
+
+#### Matt Klein quarterly ####
+# Download process, doing some manipulations so the characters become variable names
+getSymbols("PAYEMS", src="FRED")
+emp <- as_tibble(data.frame(date = index(PAYEMS), PAYEMS[,1]))
+wages_prices <- get_NIPA_data(beaKey, 'T20307', 'Q', 'All')
+wages_prices <- BEA_date_quarterly(wages_prices) %>% filter(SeriesCode == "DPCERV") %>% mutate(YoY = DataValue/100)
+
+wages0 <- get_NIPA_data(beaKey, 'T20100', 'Q', 'All')
+wages <- BEA_date_quarterly(wages0) %>% filter(SeriesCode == "A033RC") %>%
+  left_join(emp, by="date") %>% mutate(emp_wage = DataValue/PAYEMS, YoY = emp_wage/lag(emp_wage,4)-1) %>%
+  select(-emp_wage, -PAYEMS)
+
+rbind(wages,wages_prices) %>%
+  ggplot(aes(date, YoY, color=LineDescription)) + geom_line() + theme_classic() +
+  theme(legend.position = c(0.5,0.8))
+
+
+rbind(wages,wages_prices) %>%
+  group_by(date) %>%
+  summarize(YoY = YoY[SeriesCode == "A033RC"] - YoY[SeriesCode == "DPCERV"]) %>%
+  ggplot(aes(date, YoY)) + geom_line() + theme_classic() +
+  theme(legend.position = c(0.5,0.8))
+
+
+
+wagesA <- get_NIPA_data(beaKey, 'T60600A', 'A', 'All') %>% mutate(YoY = DataValue/lag(DataValue,1)-1)
+wagesB <- get_NIPA_data(beaKey, 'T60600B', 'A', 'All') %>% mutate(YoY = DataValue/lag(DataValue,1)-1)
+wagesC <- get_NIPA_data(beaKey, 'T60600C', 'A', 'All') %>% mutate(YoY = DataValue/lag(DataValue,1)-1)
+wagesD <- get_NIPA_data(beaKey, 'T60600D', 'A', 'All') %>% mutate(YoY = DataValue/lag(DataValue,1)-1)
+
+
 
 #### HOW MANY ITEMS ARE THERE? ARE THEY THE SAME PER YEAR?
 arrange(unique(year(pce$date)))

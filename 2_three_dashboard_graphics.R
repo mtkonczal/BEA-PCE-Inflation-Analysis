@@ -69,7 +69,7 @@ pce %>% filter(date > "2017-12-01", LineDescription == "PCE excluding food and e
   theme(panel.grid.major.y = element_line(size=0.5)) +
   theme(plot.title.position = "plot") +
   scale_y_continuous(labels = percent) +
-  geom_text(aes(x=date, y=DataValue_P1a, label=num_label), nudge_y = 0.002, size=2.5, color="pink") +
+  geom_text(aes(x=date, y=DataValue_P1a, label=num_label), nudge_y = 0.002, size=3, color="pink") +
   scale_x_date(date_labels = "%b %y", breaks = date_breaks)
 
 ggsave("graphics/g1_core.png", dpi="retina", width = 12, height=6.75, units = "in")
