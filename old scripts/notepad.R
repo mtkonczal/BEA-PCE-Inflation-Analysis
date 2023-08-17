@@ -9,6 +9,7 @@ setwd("/Users/mkonczal/Documents/GitHub/BEA-PCE-Inflation-Analysis/")
 beaKey <- read_csv("/Users/mkonczal/Documents/data_folder/BEA_key/BEA_key.csv")
 beaKey <- as.character(beaKey)
 source("1a_helper_functions.R")
+source("1b_load_PCE_items_all.R")
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
@@ -675,6 +676,11 @@ a <-
 
 compare_date <- max(pce$date) %m-% months(12)
 #compare_date <- as.Date("2019-12-01")
+
+
+
+
+
 
 recent <-pce %>% group_by(LineDescription) %>%
   mutate(QuantityFinal = Quantity/lag(Quantity,12)-1,

@@ -24,8 +24,13 @@ PCE_Weight <- PCE_Weight %>%
   mutate(PCEweight = DataValue/TotalGDP) %>%
   select(date, LineDescription, PCEweight)
 
+
+PCE_Q <- get_NIPA_data(beaKey, 'U20403', 'M', 'All', data_set_name = 'NIUnderlyingDetail')
+PCE_Q <- BEA_date_monthly(PCE_Q) %>% select(LineDescription, date, Quantity = DataValue)
+
 pce <- pce %>%
-  left_join(PCE_Weight, by=c('date' = 'date','LineDescription' = 'LineDescription'))
+  left_join(PCE_Weight, by=c('date' = 'date','LineDescription' = 'LineDescription')) %>%
+  left_join(PCE_Q, by=c('date' = 'date','LineDescription' = 'LineDescription'))
 
 pce <- pce %>%
   group_by(SeriesCode) %>%
@@ -38,4 +43,3 @@ pce <- pce %>%
 rm(PCE_Weight, GDP_Weight)
 
 save(pce, file = "data/pce_long.RData")
-
