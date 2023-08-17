@@ -661,3 +661,69 @@ pce %>% filter(LineDescription %in% service_breakdown) %>%
 op <- c("Calculators, typewriters, and other information processing equipment", "Watches", "Spirits", "Other fuels", "Watches","Standard clothing issued to military personnel")
 
 pce %>% filter(LineDescription %in% op) %>% group_by(LineDescription) %>% summarize(n())
+
+a <- 
+  pce %>% group_by(LineDescription) %>%
+  mutate(QuantityFinal = Quantity/lag(Quantity,12)-1,
+         PriceFinal = DataValue/lag(DataValue,12)-1,
+  ) %>%
+  filter(date == max(date) | date == max(date) %m-% months(12)) %>%
+  summarize(QuantityFinal = QuantityFinal[date == max(date)] - QuantityFinal[date == max(date) %m-% months(12)],
+            PriceFinal = PriceFinal[date == max(date)] - PriceFinal[date == max(date) %m-% months(12)],
+            weight = PCEweight
+  ) 
+
+compare_date <- max(pce$date) %m-% months(12)
+#compare_date <- as.Date("2019-12-01")
+
+recent <-pce %>% group_by(LineDescription) %>%
+  mutate(QuantityFinal = Quantity/lag(Quantity,12)-1,
+         PriceFinal = DataValue/lag(DataValue,12)-1,
+         ) %>%
+  filter(date == max(date) | date == compare_date) %>%
+  summarize(QuantityFinal = QuantityFinal[date == max(date)] - QuantityFinal[date == compare_date],
+            PriceFinal = PriceFinal[date == max(date)] - PriceFinal[date == compare_date],
+            weight = PCEweight[date == max(date)]) %>%
+  ungroup()
+
+recent %>%
+  ggplot(aes(QuantityFinal,PriceFinal,size=weight)) + geom_point() +
+  theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0)
+
+
+recent %>%
+  mutate(quadrant = case_when(
+    QuantityFinal > 0 & PriceFinal > 0 ~ "Quadrant 1 - Demand+",
+    QuantityFinal < 0 & PriceFinal > 0 ~ "Quadrant 2 - Supply-",
+    QuantityFinal < 0 & PriceFinal < 0 ~ "Quadrant 3 - Demand-",
+    QuantityFinal > 0 & PriceFinal < 0 ~ "Quadrant 4 - Supply+",
+    TRUE ~ "Undefined")) %>%
+  group_by(quadrant) %>%
+  summarize(n = sum(weight), nW = sum(weight*PriceFinal)) %>%
+  ungroup() %>%
+  mutate(n = n/sum(n), )
+
+
+remove_outliers <- function(x, multiplier = 1.5) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  
+  lower_bound <- Q1 - multiplier * IQR
+  upper_bound <- Q3 + multiplier * IQR
+  
+  x[(x < lower_bound) | (x > upper_bound)] <- NA
+  return(x)
+}
+
+
+recent2 <-
+  recent %>%
+  mutate(QuantityFinal = remove_outliers(QuantityFinal)) %>%
+  mutate(PriceFinal = remove_outliers(PriceFinal)) %>%
+  na.omit() %>%
+  filter(weight < 0.4) %>%
+  ggplot(aes(QuantityFinal,PriceFinal,size=weight)) + geom_point() +
+  theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0)
+
+
