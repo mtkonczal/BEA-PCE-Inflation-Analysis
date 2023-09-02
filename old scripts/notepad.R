@@ -733,3 +733,30 @@ recent2 <-
   theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0)
 
 
+
+
+movies <- pce %>% filter(LineDescription %in% c("Motion picture theaters")) %>%
+  rename(Price = DataValue) %>% select(LineDescription, TimePeriod, Price, Quantity) %>%
+  #group_by(LineDescription) %>% arrange(TimePeriod) %>%
+  #mutate(Price2019 = lag(Price,1), Quantity2019 = lag(Quantity,1)) %>%
+  ungroup()
+
+movies %>% ggplot(aes(Price, Quantity, color=LineDescription)) + geom_point(size=5) + geom_line(size=1.2) +
+  theme_classic() +
+  theme(legend.position='bottom') +
+  labs(title="Food at Home Moved Up a Demand Curve, Food Services a Supply Curve",
+       subtitle= "The larger circle is the value for 2021, the smaller circle is the value for 2019. Index numbers, 2012=100",
+       caption="Inspired by Adam Shapiro's SF Fed Inflation work. NIPA Table 2.4.3 and 2.4.4, Author's Calculations. Mike Konczal, Roosevelt Institute",
+       x="Quantity (Index)", y="Price (Index)") +
+  theme(plot.title = element_text(size = 25),
+        plot.caption = element_text(size=12),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(size=18, margin=ggplot2::margin(9,0,15,0),lineheight=1.05)) +
+  theme(axis.text = element_text(size=20), axis.title = element_text(size=20),
+        legend.text.align = 0, legend.background = element_blank(), legend.title = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size=15, color="#222222"), panel.background = element_blank())  +
+  scale_colour_brewer(palette="Set1")
+
+
+ggsave("food_inflation.png", dpi="retina", width = 12, height=6, units = "in")

@@ -12,7 +12,7 @@ source("1a_helper_functions.R")
 source("1b_load_PCE_items.R")
 
 
-title_three_dashboard <- "Non-Housing Servies Finally Breaks"
+title_three_dashboard <- "Increases in Services Offset by Goods"
 three_twelve_graphic <- "Inflation Over the Past Three Months Have Finally Dropped"
 title_overview <- "PCE Inflation Fell Last Month"
 source("2_three_dashboard_graphics.R")

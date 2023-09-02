@@ -16,22 +16,23 @@ load("data/pce_long.RData")
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
 
+# Function to remove outliers for graphics
 remove_outliers <- function(x, multiplier = 1.5) {
   Q1 <- quantile(x, 0.25, na.rm = TRUE)
   Q3 <- quantile(x, 0.75, na.rm = TRUE)
   IQR <- Q3 - Q1
-  
   lower_bound <- Q1 - multiplier * IQR
   upper_bound <- Q3 + multiplier * IQR
-  
   x[(x < lower_bound) | (x > upper_bound)] <- NA
   return(x)
 }
 
+# Get preloaded categories and levels for each
 lowest <- read_csv("data/pce_items_lowest.csv")
 
 months_change <- 3
-compare_date <- max(pce$date) %m-% months(5)
+compare_date <- "2022-12-01"
+#compare_date <- as.Date("2022-06-01")
 
 recent <-pce %>% group_by(LineDescription) %>% filter(LineDescription != 323 | LineDescription != 324) %>%
   mutate(QuantityFinal = Quantity/lag(Quantity,months_change)-1,
@@ -48,20 +49,22 @@ recent %>% inner_join(lowest,by="LineDescription") %>% filter(category != "Aggre
   filter(category != "Food and Energy") %>%
   arrange(LineDescription) %>%
   mutate(x = LineDescription == lag(LineDescription)) %>%
-  filter(!x) %>%
+  #filter(!x) %>%
   filter(level == "Level 4") %>%
-  mutate(QuantityFinal = remove_outliers(QuantityFinal, 3)) %>%
-  mutate(PriceFinal = remove_outliers(PriceFinal, 3)) %>%
+  #mutate(QuantityFinal = remove_outliers(QuantityFinal, 3)) %>%
+  #mutate(PriceFinal = remove_outliers(PriceFinal, 3)) %>%
   ggplot(aes(QuantityFinal,PriceFinal,size=weight, color=category)) + geom_point(aes(fill="skyblue"), alpha=0.5, shape = 21, color = "black", stroke = 1.5, show.legend=FALSE) +
   theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
-  labs(subtitle = "3-month Change June 2023 Minus 3-month Change Jan 2023, Quantity and Inflation, for 130 PCE Item Categories",
+  labs(subtitle = "3-month Change July 2023 Minus 3-month Change December 2022, Quantity and Inflation, for ~130 Core PCE Item Categories",
+       title="Deceleration is Driven by Expanded Supply",
        caption = "Outliers 3x IQR range removed. Based on Adam Shapiro's work, San Francisco Fed. Mike Konczal, Roosevelt Institute",
        y = "Percentage Point Change in Price (Inflation)",
        x = "Percentage Point Change in Quantity (Real Value)") +
   scale_y_continuous(labels = scales::percent) +
   scale_x_continuous(labels = scales::percent) +
   theme(plot.title.position = "plot", legend.position = c(0.85,0.9)) +
-  scale_size_continuous(range = c(3, 10)) + facet_wrap(~category, scales = "free_y")
+  scale_size_continuous(range = c(3, 10)) +
+  facet_wrap(~category, scales = "free_y")
 
 ggsave("graphics/supply_demand.png", dpi="retina", width = 12, height=6.75, units = "in")
 
@@ -85,3 +88,86 @@ recent %>% inner_join(lowest,by="LineDescription") %>%
   mutate(n = n/sum(n)) %>%
   ungroup() %>%
   arrange(category)
+
+
+### assume we have shapiro loaded  - cyclical_categories
+
+cyclical_categories <- c("Accessories and parts",
+                         "Veterinary and other services for pets",
+                         "Bicycles and accessories",
+                         "Child care",
+                         "Amusement parks, campgrounds, and related recreational services",
+                         "Clothing and footwear services",
+                         "Household care services",
+                         "Social advocacy and civic and social organizations",
+                         "Less: Personal remittances in kind to nonresidents",
+                         "Household cleaning products",
+                         "Nursing homes (52)",
+                         "Package tours",
+                         "Labor organization dues",
+                         "Museums and libraries",
+                         "Lotteries",
+                         "Imputed rental of owner-occupied nonfarm housing (21)",
+                         "Pari-mutuel net receipts",
+                         "Miscellaneous household products",
+                         "Group housing (23)",
+                         "Pleasure boats, aircraft, and other recreational vehicles",
+                         "Admissions to specified spectator amusements",
+                         "Social assistance",
+                         "Purchased meals and beverages (102)",
+                         "Casino gambling",
+                         "Religious Organizations' Services to HHs",
+                         "Motor vehicle maintenance and repair (60)",
+                         "Household paper products",
+                         "Domestic services",
+                         "Rental of tenant-occupied nonfarm housing (20)",
+                         "Final consumption expenditures of nonprofit institutions serving households (NPISHs) (132)")
+
+recent %>% 
+  filter(LineDescription %in% cyclical_categories) %>%
+  
+#  mutate(QuantityFinal = remove_outliers(QuantityFinal, 3)) %>%
+#  mutate(PriceFinal = remove_outliers(PriceFinal, 3)) %>%
+  ggplot(aes(QuantityFinal,PriceFinal,size=weight)) + geom_point(aes(fill="skyblue"), alpha=0.5, shape = 21, color = "black", stroke = 1.5, show.legend=FALSE) +
+  theme_classic() + geom_hline(yintercept = 0) + geom_vline(xintercept = 0) +
+  labs(subtitle = "3-month Change June 2023 Minus 3-month Change June 2022, Quantity and Inflation, for ~130 Core PCE Item Categories",
+       title="Deceleration is Driven by Expanded Supply",
+       caption = "Outliers 3x IQR range removed. Based on Adam Shapiro's work, San Francisco Fed. Mike Konczal, Roosevelt Institute",
+       y = "Percentage Point Change in Price (Inflation)",
+       x = "Percentage Point Change in Quantity (Real Value)") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(labels = scales::percent) +
+  theme(plot.title.position = "plot", legend.position = c(0.85,0.9)) +
+  scale_size_continuous(range = c(3, 10))
+
+recent %>% filter(LineDescription %in% cyclical_housing_categories)
+
+
+#### Historical dive ####
+
+pce %>% filter(LineDescription %in% lowest$LineDescription) %>%
+  group_by(date) %>%
+  summarize(median = median(DataValue_P1),
+            p25 = quantile(DataValue_P1, probs = 0.25, na.rm=TRUE),
+            p90 = quantile(DataValue_P1, probs = 0.9, na.rm=TRUE)) %>%
+  ungroup() %>%
+  pivot_longer(median:p90, names_to = "type", values_to = "change") %>%
+  filter(change > -0.75) %>%
+  ggplot(aes(date,change)) + geom_point() + theme_classic() + facet_wrap(~type, scales = "free")
+
+
+pce %>% filter(LineDescription %in% lowest$LineDescription) %>%
+  group_by(LineDescription) %>%
+  mutate(DataValue_P6 = DataValue/lag(DataValue,6),
+         DataValue_P6 = DataValue_P6^2-1) %>%
+  ungroup() %>%
+  group_by(date) %>%
+  summarize(median = median(DataValue_P6, rm.na = TRUE),
+            p10 = quantile(DataValue_P6, probs = 0.10, na.rm=TRUE),
+            p25 = quantile(DataValue_P6, probs = 0.25, na.rm=TRUE),
+            p90 = quantile(DataValue_P6, probs = 0.9, na.rm=TRUE)) %>%
+  ungroup() %>%
+  pivot_longer(median:p90, names_to = "type", values_to = "change") %>%
+  filter(year(date) > 1965, type != "p90") %>%
+  ggplot(aes(date,change, color=type)) + geom_line() + theme_classic() +
+  geom_hline(yintercept = 0)
