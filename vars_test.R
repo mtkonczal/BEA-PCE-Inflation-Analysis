@@ -39,13 +39,18 @@ df <- pce %>% filter(LineDescription %in% c("PCE goods excluding food and energy
   na.omit()
 
 
-df <- df %>% filter(year(date) <)
+#df <- df %>% filter(year(date) < 2020)
 #df <- df %>% filter(year(date)<2020)
 ts_data <- ts(df[, c("goods_inflation", "services_inflation","goods_quantity","services_quantity","supply_chains", "v_u")], start=c(year(min(df$date)), month(min(df$date))), frequency=12)
 
 VARselect(ts_data)
 var_model <- VAR(ts_data, p=10)
 summary(var_model)
+
+forecast_periods <- 10
+var_forecast <- predict(var_model, n.ahead=forecast_periods)
+print(var_forecast$fcst)
+
 
 irf_results <- irf(var_model, impulse="supply_chains", response=c("goods_inflation", "services_inflation"), n.ahead=48, boot=TRUE, runs=100)
 plot(irf_results)

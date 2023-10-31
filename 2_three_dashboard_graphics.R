@@ -103,7 +103,7 @@ core %>% filter(date > "2016-12-01") %>%
   left_join(one_month, by=c("date","time_length")) %>%
   ggplot(aes(date, change, color=time_length, label=label_percent()(last_value))) + geom_line(size=1.2) +
   labs(x="", y="",
-       title="Core PCE Inflation Continues to Fall",
+       title="Bumpy Month, But Core PCE Inflation Under 3 Percent",
        subtitle = paste("Core PCE inflation, monthly percentage change, annualized. Dotted line represented 2017 to 2019 value of ", round(pre_core,3)*100, "%, annualized.", sep=""),
        caption = "PCE excluding food and energy, 1-month value for April 2020 removed from graphic as negative outlier. Author's calculations. Mike Konczal, Roosevelt Institute.") +
   theme_lass +
@@ -119,4 +119,5 @@ core %>% filter(date > "2016-12-01") %>%
   geom_col(aes(date, p1A), alpha=0.1, size=0, show.legend = FALSE)
 
 ggsave("graphics/three_six_core_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
+
 

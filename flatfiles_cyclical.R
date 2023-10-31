@@ -29,7 +29,7 @@ BEA_format_date <- function(x) {
 }
 
 #### Download and format data. No analysis.
-load_flat_files <- function(location, type = "Q"){
+load_flat_files <- function(location = "https://apps.bea.gov/national/Release/TXT/", type = "Q"){
   print(Sys.time())
   series <- read_csv(paste(location,"SeriesRegister.txt", sep=""), show_col_types = FALSE) %>% clean_names() %>% rename(series_code = percent_series_code)
   tables <- read_csv(paste(location,"TablesRegister.txt", sep=""), show_col_types = FALSE) %>% clean_names()
@@ -46,8 +46,7 @@ load_flat_files <- function(location, type = "Q"){
 
 #### 
 
-location <- "https://apps.bea.gov/national/Release/TXT/"
-monthly_data <- load_flat_files(location, type = "M")
+monthly_data <- load_flat_files(type = "M")
 
 
 
