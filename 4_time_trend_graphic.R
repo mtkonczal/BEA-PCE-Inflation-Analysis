@@ -110,7 +110,7 @@ run_analysis <- function(length_of_sampling = 6, n_trials = 10000){
   imean <- c("Mean", mean(random_array$annual),mean(random_array$second_half))
   imedian <- c("Median",median(random_array$annual),median(random_array$second_half))
   i20 <- c("20th Percentile",quantile(random_array$annual,0.2),quantile(random_array$second_half,0.2))
-  i80 <- c("80th Percentle",quantile(random_array$annual,0.8),quantile(random_array$second_half,0.8))
+  i80 <- c("80th Percentile",quantile(random_array$annual,0.8),quantile(random_array$second_half,0.8))
   r_array <- as_tibble(rbind(imean,imedian,i20,i80))
   colnames(r_array) <- c("type","yoy","month6")
   
