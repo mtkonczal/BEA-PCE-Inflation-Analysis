@@ -37,6 +37,8 @@ calculate_diff <- function(df, lag_length = 6, annualize = TRUE) {
 # setup data
 df <- prep_FRED_data("PCEPILFE") %>%
   rename(pce = pcepilfe)
+#df <- long_pce %>% rename(pce = pce_index)
+
 a <- ym(c("2022-09", "2023-12"))
 r <- range(a, na.rm = TRUE)
 a <- tibble(date = seq(r[1], r[2], "month"))
@@ -46,7 +48,7 @@ pce <- left_join(a, df, by = "date")
 # Start here
 # initialize empty frame
 pce_chart <- tibble(length_variable = character(),
-               annual = numeric())
+                    annual = numeric())
 for (i in c(1,3,6,12)) {
   x <- calculate_diff(pce$pce, i,annualize = FALSE)
   x <- tail(x[!is.na(x)], 1)
@@ -56,8 +58,8 @@ for (i in c(1,3,6,12)) {
   values6 <- calculate_diff(pce$tester, 6, annualize = TRUE)
   pce_chart <- rbind(pce_chart, tibble(date =paste0(i, "-month change"),
                                        value = (1+x)^12-1,
-         second_half = tail(values6[!is.na(values6)],1),
-         annual = tail(values[!is.na(values)],1)))
+                                       second_half = tail(values6[!is.na(values6)],1),
+                                       annual = tail(values[!is.na(values)],1)))
 }
 
 run_analysis <- function(length_of_sampling = 6, n_trials = 10000){
@@ -87,10 +89,10 @@ run_analysis <- function(length_of_sampling = 6, n_trials = 10000){
     pivot_longer(second_half:annual, names_to = "names", values_to = "values") %>%
     group_by(names) %>%
     summarize(mean_value = mean(values),
-             median_value = median(values),
-             q20 = quantile(values, 0.20),
-             q80 = quantile(values, 0.80)
-             ) %>%
+              median_value = median(values),
+              q20 = quantile(values, 0.20),
+              q80 = quantile(values, 0.80)
+    ) %>%
     mutate(names = if_else(names == "annual", "Year-Over-Year 2023", "Second Half, 2023"))
   
   
@@ -104,7 +106,7 @@ run_analysis <- function(length_of_sampling = 6, n_trials = 10000){
       `80th_percentile` = ~quantile(., 0.8)
     )) %>%
     pivot_longer(mean:`80th_percentile`, names_to = "types", values_to = "these")
-    
+  
   
   
   imean <- c("Mean", mean(random_array$annual),mean(random_array$second_half))
@@ -115,7 +117,7 @@ run_analysis <- function(length_of_sampling = 6, n_trials = 10000){
   colnames(r_array) <- c("type","yoy","month6")
   
   r_array <- r_array %>% mutate(yoy = as.numeric(yoy),
-                     month6 = as.numeric(month6)) %>%
+                                month6 = as.numeric(month6)) %>%
     mutate(value = NA) %>%
     select(type, value, yoy, month6) %>%
     mutate(chart_type = paste0("Random Sampling From Last ", length_of_sampling, " Months:"))
@@ -137,7 +139,7 @@ pce_chart %>% select(type = date,
   rbind(r_array2) %>%
   gt(groupname_col = "chart_type") %>%
   tab_header(title=md("**What Will Core PCE Inflation Be at the End of 2023?**"),
-  subtitle = "Assigning Q4 values based on previous months and randomly sampling last 6 and 12 months.") %>%
+             subtitle = "Assigning Q4 values based on previous months and randomly sampling last 6 and 12 months.") %>%
   cols_label(
     value = "Initial Value",
     yoy = html("Year-over-Year\n2023"),
@@ -153,4 +155,4 @@ pce_chart %>% select(type = date,
   fmt_percent(decimals = 1) %>%
   opt_stylize(style = 6, color = 'blue') %>%
   sub_missing(column = value, missing_text = "") %>%
-  gtsave(., filename="graphic/projections_test.png")
+  gtsave(., filename="graphics/projections_test.png")

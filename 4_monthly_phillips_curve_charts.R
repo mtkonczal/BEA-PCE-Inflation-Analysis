@@ -13,6 +13,12 @@ library(zoo)
 library(ggrepel)
 
 #### SECTION 1: Preparing Data ####
+# COMMENT ME OUT TOMORROW
+#long_pce <- prep_FRED_data("PCEPILFE") %>% rename(pce_index = pcepilfe)
+
+#long_pce_pc <- long_pce %>%
+#  select(date, pce_index = DataValue)
+
 
 # Function for downloading data from FRED
 prep_FRED_data <- function(x) {
@@ -25,7 +31,7 @@ prep_FRED_data <- function(x) {
 }
 
 # List of variables to download
-fred_variables <- c("EXPINF5YR","UNRATE","NROU","PCEPILFE","MICH","GDP","JTSJOR","MEDCPIM158SFRBCLE")
+fred_variables <- c("UNRATE","NROU","PCEPILFE")
 
 # Download process, doing some manipulations so the characters become variable names
 for(i in fred_variables){
@@ -40,10 +46,7 @@ pc_data <- get(tolower(fred_variables[1]))
 for(i in fred_variables[-1]) {
   pc_data <- full_join(pc_data, get(tolower(i)), by="date")
 }
-pc_data <- pc_data %>% arrange(date) %>%
-  rename(core_pce = pcepilfe,
-         job_openings = jtsjor,
-         median_cpi = medcpim158sfrbcle)
+
 
 long_exp <- read_delim("data/LONGBASE.TXT") %>%
   select(OBS, PTR) %>%
@@ -52,12 +55,14 @@ long_exp <- read_delim("data/LONGBASE.TXT") %>%
   mutate(date = as.Date(paste(year, month,1, sep = "-"), "%Y-%m-%d")) %>%
   select(date, FRB_exp = PTR) %>%
   filter(year(date) > 1970)
-pc_data <- pc_data %>% left_join(long_exp, by="date")
 
-# Last, get the changes and recreate some new variables
+
+pc_data <- pc_data %>% rename(pce_index = pcepilfe)
 pc_analysis <- pc_data %>%
+  left_join(long_exp, by="date") %>%
+  #left_join(long_pce, by="date") %>%
   mutate(
-    core_pce_changeA = (core_pce/lag(core_pce,3))^4 - 1,
+    core_pce_changeA = (pce_index/lag(pce_index,3))^4 - 1,
     core_pce_changeA = core_pce_changeA*100,
   ) %>%
   filter(!is.na(core_pce_changeA))
@@ -67,7 +72,6 @@ pc_analysis <- pc_data %>%
 # Future updates TKTK might extrapolate in-between, not sure best process.
 # Also there must be a way to not do this in a for loop but we're just going to move right along.
 pc_analysis$nrou <- na.locf(pc_analysis$nrou, na.rm = FALSE)
-pc_analysis$gdp <- na.locf(pc_analysis$gdp, na.rm = FALSE)
 pc_analysis$FRB_exp <- na.locf(pc_analysis$FRB_exp, na.rm = FALSE)
 
 pc_analysis$unrate_slack = pc_analysis$unrate - pc_analysis$nrou
@@ -94,7 +98,7 @@ model <- lm(core_pce_changeA ~ lagged_1 + lagged_2 + FRB_exp +
 summary(model)
 
 model2 <- lm(core_pce_changeA ~ lagged_1 + lagged_2 + FRB_exp +
-               unrate_slack, data = pc_analysis[pc_analysis$date<"2020-01-01",])
+               unrate_slack, data = pc_analysis[pc_analysis$date<"2020-01-01" & pc_analysis$date>="1970-01-01",])
 summary(model2)
 
 pc_analysis$predicted_1980_2019 <- predict(model, newdata = pc_analysis)
@@ -109,8 +113,8 @@ pc_analysis %>% filter(year(date)>2010) %>%
   geom_line(aes(y = predicted_1980_2019, color = "Predicted Inflation, 1991- training data")) +
   geom_line(aes(y = predicted_1970_2019, color = "Predicted Inflation, 1970- training data")) +
   labs(title = "Actual vs. Predicted PCE Core Inflation on Federal Reserve's Phillips Curve Specification", y = "Inflation Rate", x = "Date",
-       subtitle=TeX(r"(Predicted is trained on 1991-2019 (red), 1970-2019 (purple), quarterly backwards from August 2023, of $\pi_t = \pi^{e}_t + \pi_{t-1} + \pi_{t-2} + (u - u^*)$)"),
-       caption="Philly Fed SPF for 1991-; FRB/US data for 1970-. u-star from CBO.") +
+       subtitle=TeX(r"(Predicted is trained on 1991-2019 (red), 1970-2019 (purple), quarterly backwards from October 2023, of $\pi_t = \pi^{e}_t + \pi_{t-1} + \pi_{t-2} + (u - u^*)$)"),
+       caption="Expected inflation is: Philly Fed SPF for 1991-; FRB/US data for 1970-. U-star from CBO. Author's Calculations, Mike Konczal, Roosevelt Institute.") +
   scale_color_manual(values = c("Actual Inflation" = "blue", "Predicted Inflation, 1991- training data" = "red","Predicted Inflation, 1970- training data" = "purple")) +
   theme_classic() +
   theme(legend.position = c(0.5,0.8), plot.title.position = "plot") +

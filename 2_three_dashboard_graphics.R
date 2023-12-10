@@ -103,7 +103,7 @@ core %>% filter(date > "2016-12-01") %>%
   left_join(one_month, by=c("date","time_length")) %>%
   ggplot(aes(date, change, color=time_length, label=label_percent()(last_value))) + geom_line(size=1.2) +
   labs(x="", y="",
-       title="Bumpy Month, But Core PCE Inflation Under 3 Percent",
+       title="Core PCE Inflation Now Under 2.5 Percent?!",
        subtitle = paste("Core PCE inflation, monthly percentage change, annualized. Dotted line represented 2017 to 2019 value of ", round(pre_core,3)*100, "%, annualized.", sep=""),
        caption = "PCE excluding food and energy, 1-month value for April 2020 removed from graphic as negative outlier. Author's calculations. Mike Konczal, Roosevelt Institute.") +
   theme_lass +
@@ -120,4 +120,31 @@ core %>% filter(date > "2016-12-01") %>%
 
 ggsave("graphics/three_six_core_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
 
+trump_data <- 
+core %>%
+  filter(time_length == "6-Month Change") %>%
+  mutate(trump = change[date=="2021-01-01"]) %>%
+  mutate(trump = if_else(date>="2021-01-01",trump, NA))
 
+
+trump_breaks <- sort(unique(trump_data$date), decreasing = TRUE)
+trump_breaks <- trump_breaks[seq(1, length(trump_breaks), 6)]
+trump_breaks <- c(trump_breaks, "2021-01-01")
+
+trump_data %>%
+  filter(year(date) >= 2018) %>%
+  mutate(trump_label = if_else(date == "2021-01-01", change, NA)) %>%
+  ggplot() +
+  geom_line(aes(date,change), color="#2D779C", size=2) +
+  geom_line(aes(date,trump), color= "#A4CCCC", linetype="dashed") +
+  theme_lass +
+  scale_y_continuous(labels = percent) +
+  scale_x_date(date_labels = "%b\n%Y", breaks=trump_breaks) +
+  geom_segment(aes(x = as.Date("2021-01-01") , y = 0, xend = as.Date("2021-01-01"), yend = trump_data$change[trump_data$date=="2021-01-01"]), color= "#A4CCCC", linetype="dashed") +
+  labs(x="", y="",
+       title="Six-Month Core PCE Inflation is Lower Now Than When President Biden Took Office",
+       subtitle = paste0("Core PCE inflation, six-month percentage change, annualized. Dotted line represents January 2021 value of ", round(trump_data$trump[trump_data$date==max(trump_data$date)],3)*100, "%, annualized."),
+       caption = "PCE excluding food and energy, Author's calculations. Mike Konczal, Roosevelt Institute.") +
+  geom_text_repel(aes(date,change, label=label_percent(accuracy=0.01)(last_value)), color="#2D779C", show.legend=FALSE, nudge_x = 35, size=9) +
+  geom_text_repel(aes(date,trump_label, label=label_percent(accuracy=0.01)(trump_label)), color="#A4CCCC", show.legend=FALSE, nudge_x = -15, nudge_y = 0.0022, size=9, segment.color = NA) +
+  theme(plot.title = element_text(size = 28))
