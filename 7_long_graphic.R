@@ -13,7 +13,7 @@ pce_versus_unrate <- function(long_pce, graphic_title="This is a test title.", m
   
   unrate <- prep_FRED_data("UNRATE")  %>% mutate(unrate = unrate/100)
   
-  long_data <- long_pce %>% #filter(series_label == "PCE excluding food and energy") %>%
+  long_data <- long_core_pce %>% #filter(series_label == "PCE excluding food and energy") %>%
     mutate(YoY = value/lag(value,12) - 1,
            YoYD = YoY - lag(YoY,12)) %>%
     select(date, YoY, YoYD) %>%
@@ -47,3 +47,8 @@ pce_versus_unrate <- function(long_pce, graphic_title="This is a test title.", m
 }  
 
 
+
+
+
+a <- long_pce %>% group_by(series_label) %>%
+  summarize(min(date))

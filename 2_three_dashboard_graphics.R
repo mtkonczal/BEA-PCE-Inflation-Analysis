@@ -103,11 +103,11 @@ core %>% filter(date > "2016-12-01") %>%
   left_join(one_month, by=c("date","time_length")) %>%
   ggplot(aes(date, change, color=time_length, label=label_percent()(last_value))) + geom_line(size=1.2) +
   labs(x="", y="",
-       title="Core PCE Inflation Now Under 2.5 Percent?!",
+       title="Core PCE Inflation Now at 2 Percent?!",
        subtitle = paste("Core PCE inflation, monthly percentage change, annualized. Dotted line represented 2017 to 2019 value of ", round(pre_core,3)*100, "%, annualized.", sep=""),
        caption = "PCE excluding food and energy, 1-month value for April 2020 removed from graphic as negative outlier. Author's calculations. Mike Konczal, Roosevelt Institute.") +
   theme_lass +
-  geom_hline(yintercept = pre_core, linetype="dashed", color="#A4CCCC") +
+  geom_hline(yintercept = pre_core, linetype="dashed", color="#A4CCCC", alpha=0.3) +
   scale_fill_brewer(palette="Paired") +
   theme(panel.grid.major.y = element_line(size=0.5)) +
   theme(plot.title.position = "plot") +
@@ -122,7 +122,8 @@ ggsave("graphics/three_six_core_inflation.png", dpi="retina", width = 12, height
 
 trump_data <- 
 core %>%
-  filter(time_length == "6-Month Change") %>%
+  #filter(time_length == "6-Month Change") %>%
+  filter(time_length =="6-Month Change") %>%
   mutate(trump = change[date=="2021-01-01"]) %>%
   mutate(trump = if_else(date>="2021-01-01",trump, NA))
 
