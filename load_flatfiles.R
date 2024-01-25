@@ -66,6 +66,8 @@ load_pce_data <- function(){
     left_join(PCE_Q, by=c("date","series_label")) %>%
     group_by(series_label) %>%
     mutate(DataValue_P1 = (value - lag(value,1))/lag(value,1)) %>%
+    mutate(DataValue_P3 = value/lag(value,3) -1 ) %>%
+    mutate(DataValue_P6 = value/lag(value,6) -1 ) %>%
     # Use the lagged weight
     mutate(WDataValue_P1 = DataValue_P1*lag(PCEweight,1)) %>%
     mutate(WDataValue_P1a = (1+WDataValue_P1)^4-1) %>%

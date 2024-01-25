@@ -8,8 +8,10 @@ beaKey <- as.character(beaKey)
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
+beaR_dates <- '2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023'
+
 ########### THE BIG ONE
-PCE_Weight <- get_NIPA_data(beaKey, 'U20405', 'M', '2017,2018,2019,2020,2021,2022,2023', data_set_name = 'NIUnderlyingDetail')
+PCE_Weight <- get_NIPA_data(beaKey, 'U20405', 'M', beaR_dates, data_set_name = 'NIUnderlyingDetail')
 PCE_Weight <- BEA_date_monthly(PCE_Weight)
 
 GDP_Weight <- PCE_Weight %>% filter(SeriesCode == "DPCERC") %>%
@@ -21,10 +23,10 @@ PCE_Weight <- PCE_Weight %>%
   mutate(PCEweight = DataValue/TotalGDP) %>%
   select(date, LineDescription, PCEweight)
 
-pce <- get_NIPA_data(beaKey, 'U20404', 'M', '2017,2018,2019,2020,2021,2022,2023', data_set_name = 'NIUnderlyingDetail')
+pce <- get_NIPA_data(beaKey, 'U20404', 'M', beaR_dates, data_set_name = 'NIUnderlyingDetail')
 pce <- BEA_date_monthly(pce)
 
-PCE_Q <- get_NIPA_data(beaKey, 'U20403', 'M', '2017,2018,2019,2020,2021,2022,2023', data_set_name = 'NIUnderlyingDetail')
+PCE_Q <- get_NIPA_data(beaKey, 'U20403', 'M', beaR_dates, data_set_name = 'NIUnderlyingDetail')
 PCE_Q <- BEA_date_monthly(PCE_Q) %>% select(LineDescription, date, Quantity = DataValue)
 
 pce <- pce %>%
