@@ -1,6 +1,7 @@
 library(bea.R)
 library(tidyverse)
 library(lubridate)
+library(hrbrthemes)
 
 get_NIPA_data <- function(beaKey, TableName, Frequency, Year, data_set_name = 'NIPA'){
   NIPA_request <- list(
