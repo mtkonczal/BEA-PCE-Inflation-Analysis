@@ -8,7 +8,11 @@ library(janitor)
 library(ggrepel)
 library(quantmod)
 
-source("load_flatfiles.R")
+#source("load_flatfiles.R")
+
+convertToDecimal <- function(percentage) {
+  return(as.numeric(sub("%", "", percentage)) / 100)
+}
 
 create_chart <- function(quads) {
   all <- quads %>%
@@ -116,7 +120,7 @@ get_quandrants <- function(long_pce, months_change, compare_end, compare_start, 
 }
 
 
-draw_quads <- function(quads, filter = c("Goods", "Services")) {
+draw_quads <- function(quads, filter = c("Goods", "Services"), graphic_title = "Default Title") {
   quads %>%
     mutate(QuantityFinal = remove_outliers(QuantityFinal, 4)) %>%
     mutate(PriceFinal = remove_outliers(PriceFinal, 4)) %>%
@@ -130,8 +134,8 @@ draw_quads <- function(quads, filter = c("Goods", "Services")) {
     labs(
       y = "Price (Inflation)",
       x = "Quantity",
-      subtitle = "Change in 12-month change, inflation and quantity, 123 PCE categories.\n12-month change Nov 2023 compared to baseline 12-month change November 2022.",
-      title = "80 Percent of Inflation Deceleration is Happening Where Supply is Increasing",
+      subtitle = "Change in 12-month change, inflation and quantity, 123 PCE categories.\n12-month deceleration for December 2023 compared to same value for December 2022.",
+      title = graphic_title,
       caption = "NIPA tables 2.4.3U, 2.4.4U, 2.4.5U. Mike Konczal, Roosevelt Institute."
     ) +
     facet_wrap(~category) +
@@ -155,16 +159,15 @@ compare_start <- as.Date("2022-11-01")
 
 quads <- get_quandrants(long_pce, months_change, compare_end, compare_start, lowest)
 
-draw_quads(quads)
+draw_quads(quads, graphic_title = "80 Percent of Disinflation in Supply Expanding Quadrant")
 ggsave(paste0("graphics/change_ending_", year(compare_end), ".png"), dpi = "retina", width = 12.5, height = 8.5)
 
 a <- create_chart(quads)
-convertToDecimal <- function(percentage) {
-  return(as.numeric(sub("%", "", percentage)) / 100)
-}
 
 months_change <- 12
+
 quads_final <- list()
+a <- list()
 
 for (year in c(1976,2022)) {
   # Update the dates for each year
@@ -177,11 +180,14 @@ for (year in c(1976,2022)) {
   #ggsave(paste0("graphics/change_ending_", year, ".png"), dpi = "retina", width = 12.5, height = 8.5)
 
   # If you need to create additional charts
-  a <- create_chart(quads)
-  b <- convertToDecimal(a[3,4])
+  c <- create_chart(quads)
+  #a <- rbind(a,c)
 
   quads_final <- rbind(quads_final, quads)
 }
+
+
+c <- create_chart(get_quandrants(long_pce, months_change, compare_end, compare_start, lowest) %>% mutate(Year = year))
 
 quads_final <- get_quandrants(long_pce, months_change, as.Date("2023-11-01"), as.Date("2022-11-01"), lowest) %>% mutate(Year = 2023) %>%
   rbind(quads_final) %>% filter(Year != 2022)
@@ -193,8 +199,9 @@ quads_final %>%
   mutate(PriceFinal = remove_outliers(PriceFinal, 4)) %>%
   filter(category %in% filter) %>%
   mutate(Year = as.factor(Year)) %>%
-  ggplot(aes(QuantityFinal, PriceFinal, size = weight, color = Year)) +
-  geom_point(show.legend = FALSE) + #alpha = 0.5, shape = 21, color = "black", stroke = 1.5, show.legend = FALSE) +
+  ggplot(aes(QuantityFinal, PriceFinal, size = weight, fill = Year)) +
+  #geom_point(show.legend = FALSE) + #alpha = 0.5, shape = 21, color = "black", stroke = 1.5, show.legend = FALSE) +
+  geom_point(alpha = 0.5, shape = 21, color = "black", stroke = 1.5, show.legend = FALSE) +
   theme_classic() +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
@@ -203,13 +210,13 @@ quads_final %>%
   labs(
     y = "Price (Inflation)",
     x = "Quantity",
-    subtitle = "Change in 12-month change, inflation and quantity, 123 PCE categories.\n12-month change Nov 2023 compared to baseline 12-month change November 2022.",
-    title = "80 Percent of Inflation Deceleration is Happening Where Supply is Increasing",
+    subtitle = "Change in 12-month change from previous year, inflation and quantity, 123 PCE categories, 2023 compared to 1976.\n2023 is November until Dec data out.",
+    title = "PRELIMINARY: 2023 Saw 80% of Disinflation From Expanding Supply; 1976 instead saw 68% From Declining Demand",
     caption = "NIPA tables 2.4.3U, 2.4.4U, 2.4.5U. Mike Konczal, Roosevelt Institute."
   ) +
   scale_y_continuous(labels = scales::percent) +
   scale_x_continuous(labels = scales::percent) +
   theme(plot.title.position = "plot") +
-  theme(strip.background = element_blank()) +
-  annotate("text", x = -0.25, y = -0.15, label = "Lower Demand", hjust = 0, vjust = 0) +
-  annotate("text", x = 0.25, y = -0.15, label = "Higher Supply", hjust = 0, vjust = 0)
+  theme(strip.background = element_blank(), strip.text = element_text(size=35)) +
+  annotate("text", x = -0.25, y = -0.15, label = "Lower Demand", hjust = 0, vjust = 0, color="black", size=8) +
+  annotate("text", x = 0.15, y = -0.15, label = "Higher Supply", hjust = 0, vjust = 0, color="black", size=8)

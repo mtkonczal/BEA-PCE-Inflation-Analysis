@@ -55,36 +55,34 @@ table <- a %>%
     .default = LineDescription
   )) %>%
   arrange(LineDescription) %>%
-  mutate(LineDescription = substr(LineDescription, 5, nchar(LineDescription)))
+  mutate(LineDescription = substr(LineDescription, 5, nchar(LineDescription))) %>%
+  ungroup()
   
-  
-gt_table <- table %>%
-  gt() %>%
+table %>%
+  gt(rowname_col = "LineDescription") %>%
   tab_header(
-    title = "Title for the Table",
-    subtitle = "Subtitle for the Table"
+    title = "Four Components of PCE Inflation",
+    subtitle = "All data annualized"
   ) %>%
   cols_label(
-    LineDescription = "Line Description",
-    WDataValue_P3a = "W Data Value P3a",
-    WDataValue_P6a = "W Data Value P6a",
-    Wbeforea = "W before a"
+    WDataValue_P3a = "Past 3 Months",
+    WDataValue_P6a = "Past 6 Months",
+    Wbeforea = "2018-2019"
   ) %>%
   cols_align(
     align = "center",
     columns = everything()
   ) %>%
-#  fmt_percent(
- #   columns = vars(WDataValue_P3a, WDataValue_P6a, Wbeforea)
-  #) %>%
+  fmt_percent(
+    columns = c(WDataValue_P3a, WDataValue_P6a, Wbeforea)
+  ) %>%
   tab_footnote(
     footnote = "Source: [your data source]",
     locations = cells_column_labels(columns = vars(LineDescription))
   ) %>%
+  opt_stylize(style = 6, color = "blue") %>%
   tab_source_note(
-    source_note = "Total +/- 0.1% due to rounding. Mike Konczal, Roosevelt Institute."
-  )
-
-# View the table
-gt_table
+    source_note = "Total +/- ~0.1% due to rounding. BEA, Author's Analysis. Mike Konczal, Roosevelt Institute."
+  ) %>%
+  gtsave(., filename="graphics/inflation_chart.png")
 
