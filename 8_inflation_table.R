@@ -26,16 +26,19 @@ pce %>%
   mutate(WDataValue_P6a = (1+WDataValue_P6)^2-1) %>%
   mutate(before = (DataValue[date == "2019-12-01"]/DataValue[date == "2017-12-01"]) - 1,
          Wbefore = before*PCEweight[date=="2019-11-01"],
-         Wbeforea = (1+Wbefore)^(0.5) - 1) %>%
+         Wbeforea = (1+Wbefore)^(0.5) - 1,
+         y2022 = (DataValue[date == "2022-12-01"]/DataValue[date == "2021-12-01"]) - 1,
+         Wy2022a = y2022*PCEweight[date=="2022-11-01"]) %>%
   filter(date == max(date))
     
 b <- a %>% filter(LineDescription %in% c("PCE services excluding energy", "Housing")) %>%
-  select(WDataValue_P3, WDataValue_P6, Wbefore) %>%
-  pivot_wider(names_from = "LineDescription", values_from = WDataValue_P3:Wbefore) %>%
+  select(WDataValue_P3, WDataValue_P6, Wbefore, Wy2022a) %>%
+  pivot_wider(names_from = "LineDescription", values_from = WDataValue_P3:Wy2022a) %>%
   clean_names() %>%
   summarize(WDataValue_P3 = w_data_value_p3_pce_services_excluding_energy - w_data_value_p3_housing,
             WDataValue_P6 = w_data_value_p6_pce_services_excluding_energy - w_data_value_p6_housing,
-            Wbefore = wbefore_pce_services_excluding_energy - wbefore_housing) %>%
+            Wbefore = wbefore_pce_services_excluding_energy - wbefore_housing,
+            Wy2022a = wy2022a_pce_services_excluding_energy - wy2022a_housing) %>%
   mutate(WDataValue_P3a = (1+WDataValue_P3)^4-1,
          WDataValue_P6a = (1+WDataValue_P6)^2-1,
          Wbeforea = (1+Wbefore)^(0.5) - 1,
@@ -43,9 +46,9 @@ b <- a %>% filter(LineDescription %in% c("PCE services excluding energy", "Housi
   relocate(LineDescription)
 
 table <- a %>%
-  select(LineDescription, WDataValue_P3, WDataValue_P6, Wbefore, WDataValue_P3a, WDataValue_P6a, Wbeforea) %>%
+  select(LineDescription, WDataValue_P3, WDataValue_P6, Wbefore, Wy2022a, WDataValue_P3a, WDataValue_P6a, Wbeforea) %>%
   rbind(b) %>%
-  select(LineDescription, WDataValue_P3a, WDataValue_P6a, Wbeforea) %>%
+  select(LineDescription, WDataValue_P6a, Wy2022a, Wbeforea) %>%
   filter(LineDescription != "PCE services excluding energy") %>%
   mutate(LineDescription = case_when(
     LineDescription == "Personal consumption expenditures" ~ "1 - Total PCE Inflation",
@@ -58,15 +61,17 @@ table <- a %>%
   mutate(LineDescription = substr(LineDescription, 5, nchar(LineDescription))) %>%
   ungroup()
   
+chart_date <- format(max(pce$date, na.rm = TRUE), "%B %Y")
+
 table %>%
   gt(rowname_col = "LineDescription") %>%
   tab_header(
-    title = "Four Components of PCE Inflation",
+    title = md(paste0("**Breakdown of Weighted Contribution to ", chart_date, " PCE Inflation**")),
     subtitle = "All data annualized"
   ) %>%
   cols_label(
-    WDataValue_P3a = "Past 3 Months",
     WDataValue_P6a = "Past 6 Months",
+    Wy2022a = "2022",
     Wbeforea = "2018-2019"
   ) %>%
   cols_align(
@@ -74,7 +79,7 @@ table %>%
     columns = everything()
   ) %>%
   fmt_percent(
-    columns = c(WDataValue_P3a, WDataValue_P6a, Wbeforea)
+    columns = c(WDataValue_P6a, Wy2022a, Wbeforea)
   ) %>%
   tab_footnote(
     footnote = "Source: [your data source]",
@@ -82,7 +87,13 @@ table %>%
   ) %>%
   opt_stylize(style = 6, color = "blue") %>%
   tab_source_note(
-    source_note = "Total +/- ~0.1% due to rounding. BEA, Author's Analysis. Mike Konczal, Roosevelt Institute."
+    source_note = "Total +/- ~0.2% due to rounding. BEA, Author's Analysis. Mike Konczal, Roosevelt Institute."
+  ) %>%
+  tab_style(
+    style = list(
+      cell_borders(sides = "bottom", color = "black", weight = px(2))
+    ),
+    locations = cells_body(rows = 1)
   ) %>%
   gtsave(., filename="graphics/inflation_chart.png")
 
