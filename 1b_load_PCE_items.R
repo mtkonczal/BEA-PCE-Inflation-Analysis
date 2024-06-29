@@ -8,7 +8,7 @@ beaKey <- as.character(beaKey)
 # Table IDs
 # https://www.bea.gov/system/files/2021-07/TablesRegisterPreview.txt
 
-beaR_dates <- '2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023'
+beaR_dates <- '2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024'
 
 ########### THE BIG ONE
 PCE_Weight <- get_NIPA_data(beaKey, 'U20405', 'M', beaR_dates, data_set_name = 'NIUnderlyingDetail')

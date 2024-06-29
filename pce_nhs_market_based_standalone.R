@@ -38,3 +38,11 @@ nhs_index_display <-
   mutate(core_non_housing_services = 100*core_non_housing_services/core_non_housing_services[date == "2017-12-01"],
          market_based_non_housing_services = 100*market_based_non_housing_services/market_based_non_housing_services[date == "2017-12-01"])
   
+write_csv(nhs_index_display, "data/nhs_indexes.csv")
+
+
+nhs_index_display %>%
+  mutate(mb_nhs_diff = market_based_non_housing_services/lag(market_based_non_housing_services,1),
+         mb_nhs_diff = mb_nhs_diff^12-1) %>%
+  filter(year(date) > 2010) %>%
+  ggplot(aes(date, mb_nhs_diff)) + geom_line() + theme_classic()
