@@ -178,4 +178,4 @@ table_data %>%
     ),
     locations = cells_body(rows = 1)
   ) %>%
-  gtsave(filename = "graphics/inflation_chart.png")
+  gtsave(filename = "graphics/old_inflation_chart.png")

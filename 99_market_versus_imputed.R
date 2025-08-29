@@ -92,7 +92,7 @@ pce %>% filter(SeriesCode %in% otm_basket_services) %>%
   mutate(item_name = "Other-Than-Market Price Changes in Services PCE") %>%
   select(date, item_name, 2:3) %>%
   rbind(market_services) %>%
-  ggplot(aes(date, WDataValue_P1a, fill=item_name)) + geom_bar(stat="identity", size=0) + theme_lass + facet_wrap(~item_name) +
+  ggplot(aes(date, WDataValue_P1a, fill=item_name)) + geom_bar(stat="identity", size=0) + facet_wrap(~item_name) +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y", breaks=date_breaks) +
   labs(title="Changes in Market-Based Services Inflation Versus Imputed",

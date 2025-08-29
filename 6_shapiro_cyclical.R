@@ -1,6 +1,4 @@
 
-# Let's replicate a SF Fed measure
-pce_test <- pce %>% filter(date == "2023-01-01")
 
 cyclical_categories <- c("Accessories and parts",
 "Veterinary and other services for pets",
@@ -37,39 +35,16 @@ cyclical_housing_categories <- c("Imputed rental of owner-occupied nonfarm housi
                                  "Rental of tenant-occupied nonfarm housing (20)")
 
 # Missing two
-setdiff(as.tibble(cyclical_categories), as_tibble(pce_test$LineDescription))
-
-pce %>% filter(LineDescription %in% cyclical_categories, date == "2023-01-01") %>% select(LineDescription, PCEweight) %>% arrange(desc(PCEweight))
-
-pce %>% filter(LineDescription %in% cyclical_categories, date == "2023-01-01") %>% select(LineDescription, WDataValue_P1a) %>% arrange(desc(WDataValue_P1a))
-
-
-pce %>% filter(LineDescription %in% cyclical_categories, date == "2023-02-01") %>% summarize(weight = sum(PCEweight))
+date_breaks <- date_breaks_n(pce$date)
 
 pce %>% filter(LineDescription %in% cyclical_categories) %>% group_by(date) %>%
   summarize(demand_inflation = sum(WDataValue_P1)) %>% ungroup() %>%
   mutate(demand_inflation = (demand_inflation+1)^12-1) %>%
+  filter(year(date)>=2018) %>%
   ggplot(aes(date, demand_inflation)) + geom_col(size=0) + theme_classic() +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y", breaks = date_breaks) +
   labs(subtitle="cyclical inflation (Mahedy/Shapiro), attempted replication by Mike Konczal")
 
-# no housing
 
-pce %>% filter(LineDescription %in% cyclical_categories) %>% filter(LineDescription != "Imputed rental of owner-occupied nonfarm housing (21)") %>%
-  filter(LineDescription != "Rental of tenant-occupied nonfarm housing (20)") %>%
-  group_by(date) %>%
-  summarize(demand_inflation = sum(WDataValue_P1)) %>% ungroup() %>%
-  mutate(demand_inflation = (demand_inflation+1)^12-1) %>%
-  ggplot(aes(date, demand_inflation)) + geom_col(size=0) + theme_classic() +
-  scale_y_continuous(labels = percent) +
-  labs(subtitle="1-month inflation contribution annualized, cyclical inflation (Mahedy/Shapiro), ex housing",
-       x="", y="", caption="NIPA Tables 2.4.4U and 2.4.5U, PCE weights are nominal consumption shares as a percent of total spending, Mike Konczal, Roosevelt Institute")
-
-
-a <- pce %>% filter(LineDescription %in% cyclical_categories, year(date) == 2022) %>%
-  group_by(LineDescription) %>%
-  summarize(contribution = sum(WDataValue_P1)) %>%
-  ungroup() %>%
-  mutate(contribution = contribution/sum(contribution)) %>%
-  arrange(desc(contribution))
+ggsave("graphics/cyclical_inflation.png", dpi="retina", width = 12, height=6.75, units = "in")
