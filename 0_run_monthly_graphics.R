@@ -10,7 +10,8 @@ library(tidyusmacro)
 
 nipa <- getNIPAFiles(type = "M")
 
-write_rds(nipa, "nipa.rds")
+#write_rds(nipa, "nipa.rds")
+
 pce <- getPCEInflation(frequency = "M", NIPA_data = nipa) %>%
   mutate(LineDescription = SeriesLabel, DataValue = Value)
 max(pce$date)
