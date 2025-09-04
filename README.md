@@ -1,11 +1,7 @@
 # BEA-PCE-Inflation-Analysis
 
-Folder is a bit of a mess, currently overhauling this analysis.
+Monthly analysis of PCE Inflation.
 
-Monthly analysis of PCE Inflation:
+Folder is a bit of a mess, eventually will give it a clean update. Inflation chart is the most useful output.
 
-0_run_monthly_graphics.R : The master file that runs the others.
-
-1a_helper_functions.R : Functions that help the analysis, including the BEA request calls.
-
-1b_load_PCE_items.R : Where the data is created.
+People pay less attention to this one than CPI, which makes sense given it's majority from CPI. But still, it's what the Fed uses.
